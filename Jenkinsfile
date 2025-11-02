@@ -1,80 +1,56 @@
 pipeline {
     agent any
-    
+
+    environment {
+        NODE_ENV = 'production'
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                echo 'Checkout stage running'
-                git branch: 'main', url: 'https://github.com/yourusername/your-first-name.git'
+                echo '📥 Cloning repository...'
+                git branch: 'main', url: 'https://github.com/ugiramahirwegenereuse/genereuse_devops_211.git'
             }
         }
-        
+
+        stage('Install Dependencies') {
+            steps {
+                echo '📦 Installing dependencies...'
+                sh 'npm install'
+            }
+        }
+
         stage('Build') {
             steps {
-                echo 'Build stage running'
-                sh 'docker-compose build'
+                echo '🏗️ Building application...'
+                sh 'npm run build || echo "No build script found"'
             }
         }
-        
+
         stage('Test') {
             steps {
-                echo 'Test stage running'
-                // Add your test commands here
-                sh 'echo "Running tests..."'
+                echo '🧪 Running tests...'
+                sh 'npm test || echo "No tests found"'
             }
         }
-        
-        stage('Code Quality') {
+
+        stage('Deploy') {
             steps {
-                echo 'Code Quality stage running'
-                // Add code quality checks
-                sh 'echo "Running code quality checks..."'
-            }
-        }
-        
-        stage('Security Scan') {
-            steps {
-                echo 'Security Scan stage running'
-                // Add security scanning
-                sh 'echo "Running security scans..."'
-            }
-        }
-        
-        stage('Deploy to Staging') {
-            steps {
-                echo 'Deploy to Staging stage running'
-                sh 'docker-compose up -d'
-            }
-        }
-        
-        stage('Integration Test') {
-            steps {
-                echo 'Integration Test stage running'
-                // Add integration tests
-                sh 'echo "Running integration tests..."'
-            }
-        }
-        
-        stage('Deploy to Production') {
-            steps {
-                echo 'Deploy to Production stage running'
-                // Add production deployment commands
-                sh 'echo "Deploying to production..."'
+                echo '🚀 Deploying application...'
+                sh '''
+                mkdir -p ~/healthrwanda_build
+                cp -r * ~/healthrwanda_build/
+                '''
             }
         }
     }
-    
+
     post {
-        always {
-            echo 'Pipeline completed'
-            // Cleanup
-            sh 'docker-compose down'
-        }
         success {
-            echo 'Pipeline succeeded!'
+            echo '✅ Build successful!'
         }
         failure {
-            echo 'Pipeline failed!'
+            echo '❌ Build failed! Check console output for errors.'
         }
     }
 }

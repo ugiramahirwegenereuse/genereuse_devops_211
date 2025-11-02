@@ -2,10 +2,11 @@ pipeline {
     agent any
 
     environment {
-        NODE_ENV = 'production'
+        PROJECT_DIR = '/var/www/html'   // Path where code will be deployed
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 echo '📥 Cloning repository...'
@@ -13,44 +14,50 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Build Docker Images') {
             steps {
-                echo '📦 Installing dependencies...'
-                sh 'npm install'
+                echo '🏗️ Building Docker images...'
+                sh 'docker-compose build'
             }
         }
 
-        stage('Build') {
+        stage('Start Services') {
             steps {
-                echo '🏗️ Building application...'
-                sh 'npm run build || echo "No build script found"'
+                echo '🚀 Starting Docker containers...'
+                sh 'docker-compose up -d'
             }
         }
 
-        stage('Test') {
+        stage('Run Database Initialization') {
             steps {
-                echo '🧪 Running tests...'
-                sh 'npm test || echo "No tests found"'
+                echo '🗄️ Initializing database...'
+                sh 'docker exec -i $(docker ps -q -f name=group1_db) mysql -u root -prootpassword group1_shareride_db < init.sql'
+            }
+        }
+
+        stage('Test PHP Connection') {
+            steps {
+                echo '🧪 Testing database connection with PHP...'
+                sh '''
+                docker exec -i $(docker ps -q -f name=group1_web) php -r "require 'src/config/database.php'; echo 'DB Connection OK';"
+                '''
             }
         }
 
         stage('Deploy') {
             steps {
-                echo '🚀 Deploying application...'
-                sh '''
-                mkdir -p ~/healthrwanda_build
-                cp -r * ~/healthrwanda_build/
-                '''
+                echo '✅ Deployment completed!'
+                echo 'Project is running at http://localhost:8080'
             }
         }
     }
 
     post {
         success {
-            echo '✅ Build successful!'
+            echo '🎉 Build and deployment successful!'
         }
         failure {
-            echo '❌ Build failed! Check console output for errors.'
+            echo '❌ Build failed. Check Jenkins console output for details.'
         }
     }
 }
